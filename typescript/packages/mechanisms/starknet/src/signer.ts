@@ -82,12 +82,11 @@ export interface FacilitatorStarknetSigner {
    * hash. Does not wait for confirmation.
    *
    * The returned hash MUST settle this authorization alone. An implementation
-   * that batches several authorizations into one transaction breaks two
-   * guarantees the facilitator relies on: the receipt is then checked for
-   * exactly one payer-sent `Transfer` and would show several, and a hash is
-   * bound to a single (payer, nonce), so the second authorization sharing it is
-   * refused. Both fail in the safe direction - a landed payment reported as
-   * unpaid - but the payment is still lost to the merchant, so do not batch.
+   * that batches several authorizations of one payer into one transaction
+   * breaks a guarantee the facilitator relies on: the receipt is checked for
+   * exactly one payer-sent `Transfer` and would show several. That fails in the
+   * safe direction - a landed payment reported as unpaid - but the payment is
+   * still lost to the merchant, so do not batch.
    *
    * @param params - The settlement inputs
    * @param params.payer - The payer's account contract address

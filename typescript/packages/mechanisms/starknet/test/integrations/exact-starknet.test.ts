@@ -161,7 +161,7 @@ class MockStarknetNode {
   private readonly balances = new Map<string, bigint>();
   private readonly publicKeys = new Map<string, string>();
   private readonly consumedNonces = new Set<string>();
-  private readonly transactions = new Map<string, { calldata: string[]; reverted: boolean }>();
+  private readonly transactions = new Map<string, { reverted: boolean }>();
   private readonly emitted: Array<ChainEvent & { transaction_hash: string }> = [];
 
   /**
@@ -234,7 +234,7 @@ class MockStarknetNode {
     const calldata = transaction.getExecuteCalldata(calls, "1");
     const transactionHash = hash.computeHashOnElements(calldata);
     const outcome = this.run(sender, calldata, true);
-    this.transactions.set(transactionHash, { calldata, reverted: Boolean(outcome.revertReason) });
+    this.transactions.set(transactionHash, { reverted: Boolean(outcome.revertReason) });
     for (const event of outcome.events) {
       this.emitted.push({ ...event, transaction_hash: transactionHash });
     }
@@ -255,7 +255,6 @@ class MockStarknetNode {
       },
       getContractVersion: async () => ({ cairo: "1" }),
       getNonceForAddress: async () => "0x1",
-      getBlockNumber: async () => 1_000,
       callContract: async (call: {
         contractAddress: string;
         entrypoint: string;
@@ -302,21 +301,6 @@ class MockStarknetNode {
             .map(({ from_address, keys, data }) => ({ from_address, keys, data })),
         };
       },
-      getTransaction: async (transactionHash: string) => {
-        const settled = this.transactions.get(transactionHash);
-        if (!settled) throw new Error("TXN_HASH_NOT_FOUND");
-        return { calldata: settled.calldata };
-      },
-      getEvents: async (filter: { address: string; keys: string[][] }) => ({
-        events: this.emitted.filter(
-          event =>
-            feltEquals(event.from_address, filter.address) &&
-            filter.keys.every((allowed, index) =>
-              allowed.some(key => feltEquals(key, event.keys[index])),
-            ),
-        ),
-        continuation_token: undefined,
-      }),
     } as unknown as RpcProvider;
   }
 

@@ -1,10 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { hash } from "starknet";
-import {
-  assertExactTransfer,
-  containsExactTransfer,
-  type EventLike,
-} from "../../src/exact/facilitator/simulate";
+import { assertExactTransfer, type EventLike } from "../../src/exact/facilitator/simulate";
 
 const ASSET = "0x0512feac6339ff7889822cb5aa2a86c848e9d392bb0e3e237c008674feed8343";
 const PAYER = "0x03f16efeb2ae57f7d8befb03af08a3a370562dde15149c3506ac2038ffa9be24";
@@ -154,87 +150,5 @@ describe("assertExactTransfer - neither-layout events fail closed", () => {
   it("still rejects a second Transfer sent by the payer", () => {
     const second = { from_address: ASSET, keys: [KEY, PAYER, "0x0777"], data: ["0x1", "0x0"] };
     expect(assertExactTransfer([good, second], ASSET, PAYER, PAY_TO, 10000n).ok).toBe(false);
-  });
-});
-
-// containsExactTransfer is the settle-path counterpart to assertExactTransfer:
-// containment rather than exactly-one, because a rescued transaction was
-// submitted outside this settlement attempt and its other contents are not
-// under the facilitator's control. It is the ONLY proof that a rescued
-// transaction actually paid payTo the full amount on the right asset, so each
-// of its three predicates needs a negative case.
-describe("containsExactTransfer (rescue-path payment proof)", () => {
-  it("accepts a matching Transfer among unrelated events", () => {
-    const noise = { from_address: OTHER, keys: ["0x1234"], data: ["0x9"] };
-    expect(
-      containsExactTransfer(
-        [noise, transferEvent(PAYER, PAY_TO, AMOUNT)],
-        ASSET,
-        PAYER,
-        PAY_TO,
-        AMOUNT,
-      ),
-    ).toBe(true);
-  });
-
-  it("rejects a Transfer emitted by a different token contract", () => {
-    const foreign = transferEvent(PAYER, PAY_TO, AMOUNT, OTHER);
-    expect(containsExactTransfer([foreign], ASSET, PAYER, PAY_TO, AMOUNT)).toBe(false);
-  });
-
-  it("rejects a Transfer to a different recipient", () => {
-    expect(
-      containsExactTransfer([transferEvent(PAYER, OTHER, AMOUNT)], ASSET, PAYER, PAY_TO, AMOUNT),
-    ).toBe(false);
-  });
-
-  it("rejects an underpaying Transfer", () => {
-    expect(
-      containsExactTransfer(
-        [transferEvent(PAYER, PAY_TO, AMOUNT - 1n)],
-        ASSET,
-        PAYER,
-        PAY_TO,
-        AMOUNT,
-      ),
-    ).toBe(false);
-  });
-
-  it("rejects an overpaying Transfer (the amount is exact, not a floor)", () => {
-    expect(
-      containsExactTransfer(
-        [transferEvent(PAYER, PAY_TO, AMOUNT + 1n)],
-        ASSET,
-        PAYER,
-        PAY_TO,
-        AMOUNT,
-      ),
-    ).toBe(false);
-  });
-
-  it("rejects a Transfer sent by someone other than the payer", () => {
-    expect(
-      containsExactTransfer([transferEvent(OTHER, PAY_TO, AMOUNT)], ASSET, PAYER, PAY_TO, AMOUNT),
-    ).toBe(false);
-  });
-
-  it("applies the same predicates to the legacy unkeyed layout", () => {
-    const legacy = (from: string, to: string, amount: bigint, emitter = ASSET): EventLike => ({
-      from_address: emitter,
-      keys: [TRANSFER],
-      data: [from, to, "0x" + amount.toString(16), "0x0"],
-    });
-    expect(
-      containsExactTransfer([legacy(PAYER, PAY_TO, AMOUNT)], ASSET, PAYER, PAY_TO, AMOUNT),
-    ).toBe(true);
-    expect(
-      containsExactTransfer([legacy(PAYER, OTHER, AMOUNT)], ASSET, PAYER, PAY_TO, AMOUNT),
-    ).toBe(false);
-    expect(
-      containsExactTransfer([legacy(PAYER, PAY_TO, AMOUNT - 1n)], ASSET, PAYER, PAY_TO, AMOUNT),
-    ).toBe(false);
-    expect(
-      containsExactTransfer([legacy(PAYER, PAY_TO, AMOUNT, OTHER)], ASSET, PAYER, PAY_TO, AMOUNT),
-    ).toBe(false);
   });
 });

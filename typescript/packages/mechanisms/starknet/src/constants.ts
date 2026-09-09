@@ -103,10 +103,8 @@ export const USDC_SEPOLIA = "0x0512feAc6339Ff7889822cb5aA2a86C848e9D392bB0E3E237
  * gas rather than funds. A nonce consumed in the not-yet-closed block still
  * reads as unused here, and a balance already spent there still reads as
  * available; in both cases the settlement is broadcast and reverts. A revert
- * rolls the SNIP-9 nonce back, so the authorization stays retryable, and if
- * some other transaction did execute this same authorization the consumed-nonce
- * rescue resolves it to that transaction. No path reports success for a payment
- * that did not verifiably land.
+ * rolls the SNIP-9 nonce back, so the authorization stays retryable. No path
+ * reports success for a payment that did not verifiably land.
  */
 export const READ_BLOCK = "latest";
 
@@ -118,8 +116,8 @@ export const TRANSFER_SELECTOR = hash.getSelectorFromName("transfer");
 /**
  * The SNIP-2 `Transfer` event selector, normalized to hex. Distinct from
  * {@link TRANSFER_SELECTOR}: that is the entry point called, this is the first
- * key of the event it emits, and it is matched against both event keys and RPC
- * `getEvents` filters.
+ * key of the event it emits, matched against the keys of trace and receipt
+ * events.
  */
 export const TRANSFER_EVENT_SELECTOR = num.toHex(hash.getSelectorFromName("Transfer"));
 

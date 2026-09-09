@@ -356,38 +356,6 @@ export function assertExactTransfer(
 }
 
 /**
- * Assert the event set CONTAINS the expected `asset` Transfer, ignoring whatever
- * else is present. This is the settlement step 5 criterion, deliberately weaker
- * than {@link assertExactTransfer}: the consuming transaction was submitted
- * outside this settlement attempt, so its full contents are not under this
- * facilitator's control and an exactly-one test would let a front-runner batch a
- * dust transfer to force a paid-but-denied outcome.
- *
- * @param events - The receipt events of the consuming transaction
- * @param asset - The token contract address the Transfer must be emitted by
- * @param from - The expected sender of the Transfer (payer)
- * @param to - The expected recipient of the Transfer (payTo)
- * @param amount - The exact transfer amount in atomic units
- * @returns True when a matching Transfer is present
- */
-export function containsExactTransfer(
-  events: EventLike[],
-  asset: string,
-  from: string,
-  to: string,
-  amount: bigint,
-): boolean {
-  return events.some(e => {
-    if (!e.keys?.length || !feltEquals(e.keys[0], TRANSFER_EVENT_SELECTOR)) return false;
-    const emitter = e.emitter ?? e.from_address;
-    if (emitter === undefined || !feltEquals(emitter, asset)) return false;
-    const parsed = parseTransferEvent(e);
-    if (!parsed) return false;
-    return feltEquals(parsed.from, from) && feltEquals(parsed.to, to) && parsed.amount === amount;
-  });
-}
-
-/**
  * Verify the trace's events contain exactly the expected asset Transfer.
  *
  * @param invocation - The execute invocation trace frame
